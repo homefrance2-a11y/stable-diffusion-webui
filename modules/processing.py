@@ -28,8 +28,16 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
-from ldm.data.util import AddMiDaS
-from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
+try:
+    from ldm.data.util import AddMiDaS
+except Exception:
+    class AddMiDaS:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("AddMiDaS is unavailable in this environment. Depth2img is disabled.")
+try:
+    from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
+except Exception:
+    LatentDepth2ImageDiffusion = None
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
@@ -377,7 +385,7 @@ class StableDiffusionProcessing:
 
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
-        if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
+        if LatentDepth2ImageDiffusion is not None and isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
 
         if self.sd_model.cond_stage_key == "edit":

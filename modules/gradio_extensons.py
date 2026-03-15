@@ -2,6 +2,15 @@ import gradio as gr
 
 from modules import scripts, ui_tempdir, patches
 
+# Compatibility aliases for older code using gradio 3.x component names.
+if not hasattr(gr, 'Box'):
+    gr.Box = getattr(gr, 'Column', None) or getattr(gr, 'Group', None)
+if not hasattr(gr, 'Row'):
+    gr.Row = getattr(gr, 'Block', None)
+if not hasattr(gr, 'Flex'):
+    gr.Flex = getattr(gr, 'Row', None)
+if not hasattr(gr, 'HTML'):
+    gr.HTML = getattr(gr, 'Label', None)
 
 def add_classes_to_gradio_component(comp):
     """
@@ -74,7 +83,11 @@ def Blocks_get_config_file(self, *args, **kwargs):
     return config
 
 
-original_IOComponent_init = patches.patch(__name__, obj=gr.components.IOComponent, field="__init__", replacement=IOComponent_init)
+IOComponent = getattr(gr.components, "IOComponent", getattr(gr.components, "Component", None))
+if IOComponent is not None:
+    original_IOComponent_init = patches.patch(__name__, obj=IOComponent, field="__init__", replacement=IOComponent_init)
+else:
+    original_IOComponent_init = None
 original_Block_get_config = patches.patch(__name__, obj=gr.blocks.Block, field="get_config", replacement=Block_get_config)
 original_BlockContext_init = patches.patch(__name__, obj=gr.blocks.BlockContext, field="__init__", replacement=BlockContext_init)
 original_Blocks_get_config_file = patches.patch(__name__, obj=gr.blocks.Blocks, field="get_config_file", replacement=Blocks_get_config_file)

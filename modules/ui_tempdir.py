@@ -58,7 +58,9 @@ def save_pil_to_file(self, pil_image, dir=None, format="png"):
 
 def install_ui_tempdir_override():
     """override save to file function so that it also writes PNG info"""
-    gradio.components.IOComponent.pil_to_temp_file = save_pil_to_file
+    io_component = getattr(gradio.components, "IOComponent", getattr(gradio.components, "Component", None))
+    if io_component is not None:
+        io_component.pil_to_temp_file = save_pil_to_file
 
 
 def on_tmpdir_changed():

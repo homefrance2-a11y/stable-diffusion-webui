@@ -33,7 +33,8 @@ from modules.infotext_utils import image_from_url_text, PasteField
 create_setting_component = ui_settings.create_setting_component
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
-warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else "ignore", category=gr.deprecation.GradioDeprecationWarning)
+if hasattr(gr, "deprecation") and hasattr(gr.deprecation, "GradioDeprecationWarning"):
+    warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else "ignore", category=gr.deprecation.GradioDeprecationWarning)
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -474,6 +475,8 @@ def create_ui():
             ))
 
             steps = scripts.scripts_txt2img.script('Sampler').steps
+            if steps is None or not hasattr(steps, '_id'):
+                steps = toprow.prompt
 
             txt2img_preview_params = [
                 toprow.prompt,
@@ -486,10 +489,11 @@ def create_ui():
                 height,
             ]
 
-            toprow.ui_styles.dropdown.change(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.token_counter])
-            toprow.ui_styles.dropdown.change(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.negative_token_counter])
-            toprow.token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.token_counter])
-            toprow.negative_token_button.click(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, steps, toprow.ui_styles.dropdown], outputs=[toprow.negative_token_counter])
+            if toprow.ui_styles.dropdown is not None:
+                toprow.ui_styles.dropdown.change(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, toprow.ui_styles.dropdown], outputs=[toprow.token_counter])
+                toprow.ui_styles.dropdown.change(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, toprow.ui_styles.dropdown], outputs=[toprow.negative_token_counter])
+                toprow.token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, toprow.ui_styles.dropdown], outputs=[toprow.token_counter])
+                toprow.negative_token_button.click(fn=wrap_queued_call(update_negative_prompt_token_counter), inputs=[toprow.negative_prompt, toprow.ui_styles.dropdown], outputs=[toprow.negative_token_counter])
 
         extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab], 'txt2img')
         ui_extra_networks.setup_ui(extra_networks_ui, output_panel.gallery)
