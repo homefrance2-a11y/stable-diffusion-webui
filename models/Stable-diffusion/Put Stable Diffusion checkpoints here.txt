@@ -1,0 +1,2 @@
+ bdhb
+Tutaj umieść pliki checkpointów Stable Diffusion (np. model.ckpt, model.safetensors).
